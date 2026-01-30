@@ -126,7 +126,7 @@ class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
                        ),
                        focusedBorder: OutlineInputBorder(
                          borderRadius: BorderRadius.circular(10),
-                         borderSide: const BorderSide(color: Color(0xFF32B768), width: 2),
+                         borderSide: const BorderSide(color: Color(0xFF357D5D), width: 2),
                        ),
                      ),
                      onChanged: (value) => _onChanged(value, index),
@@ -149,7 +149,7 @@ class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
                    Navigator.pop(context);
                  },
                  style: ElevatedButton.styleFrom(
-                   backgroundColor: const Color(0xFF32B768),
+                   backgroundColor: const Color(0xFF357D5D),
                    shape: RoundedRectangleBorder(
                      borderRadius: BorderRadius.circular(15),
                    ),

@@ -60,7 +60,7 @@ class _ProfileState extends State<Profile> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadUserData,
-              color: const Color(0xFF32B768),
+              color: const Color(0xFF357D5D),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(24),
@@ -122,7 +122,7 @@ class _ProfileState extends State<Profile> {
 
   Widget _buildProfileOption(IconData icon, String title, {VoidCallback? onTap}) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF32B768)),
+      leading: Icon(icon, color: const Color(0xFF357D5D)),
       title: Text(title, style: const TextStyle(fontFamily: 'comfortaa')),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap ?? () {},

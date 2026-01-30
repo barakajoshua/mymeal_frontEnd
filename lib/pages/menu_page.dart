@@ -131,7 +131,7 @@ class _MenuPageState extends State<MenuPage> {
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: const Color(0xFF32B768),
+        color: const Color(0xFF357D5D),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -144,7 +144,7 @@ class _MenuPageState extends State<MenuPage> {
               const Text(
                 "Special For You",
                 style: TextStyle(
-                  color: Color(0xFF32B768),
+                  color: Color(0xFF357D5D),
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'comfortaa',
@@ -203,7 +203,7 @@ class _MenuPageState extends State<MenuPage> {
                                 margin: const EdgeInsets.only(top: 4),
                                 height: 2,
                                 width: 20,
-                                color: const Color(0xFF32B768),
+                                color: const Color(0xFF357D5D),
                               ),
                           ],
                         ),
@@ -218,7 +218,7 @@ class _MenuPageState extends State<MenuPage> {
                 child: isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF32B768),
+                          color: Color(0xFF357D5D),
                         ),
                       )
                     : filteredProducts.isEmpty
@@ -276,7 +276,7 @@ class _MenuPageState extends State<MenuPage> {
                                     Text(
                                       "RWF ${product.price.toStringAsFixed(0)}",
                                       style: const TextStyle(
-                                        color: Color(0xFF32B768),
+                                        color: Color(0xFF357D5D),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),

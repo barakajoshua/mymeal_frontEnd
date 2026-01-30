@@ -44,7 +44,7 @@ class _HomeState extends State<Home> {
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: const Color(0xFF32B768),
+        color: const Color(0xFF357D5D),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
@@ -72,7 +72,7 @@ class _HomeState extends State<Home> {
                 Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF32B768),
+                    color: const Color(0xFF357D5D),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Row(
@@ -160,7 +160,7 @@ class _HomeState extends State<Home> {
                             ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF32B768),
+                                backgroundColor: const Color(0xFF357D5D),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -248,7 +248,7 @@ class _HomeState extends State<Home> {
                           Text(
                             "RWF ${product.price.toStringAsFixed(0)}",
                             style: const TextStyle(
-                              color: Color(0xFF32B768),
+                              color: Color(0xFF357D5D),
                               fontWeight: FontWeight.bold,
                             ),
                           ),

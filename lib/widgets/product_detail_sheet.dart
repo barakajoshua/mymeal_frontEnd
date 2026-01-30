@@ -20,7 +20,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryGreen = Color(0xFF32B768);
+    const primaryGreen = Color(0xFF357D5D);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -134,13 +134,17 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Category and Rating
+                        // 1. Category and Rating
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               widget.product.category,
-                              style: const TextStyle(color: Colors.grey, fontSize: 16),
+                              style: const TextStyle(
+                                  color: Colors.grey, 
+                                  fontSize: 16,
+                                  fontFamily: 'comfortaa',
+                              ),
                             ),
                             Row(
                               children: [
@@ -148,14 +152,19 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                                 const SizedBox(width: 4),
                                 Text(
                                   "${widget.product.rating}",
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, 
+                                      fontSize: 16,
+                                      fontFamily: 'comfortaa',
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // Name and Veg Icon
+
+                        // 2. Name and Veg Icon
                         Row(
                           children: [
                             Expanded(
@@ -180,11 +189,49 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        // Seller Section
+
+                        // 3. Description
+                        const Text(
+                          "Description",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, 
+                              fontSize: 18,
+                              fontFamily: 'comfortaa',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                                color: Colors.grey, 
+                                height: 1.5, 
+                                fontSize: 14,
+                                fontFamily: 'comfortaa',
+                            ),
+                            children: [
+                              TextSpan(text: widget.product.description),
+                              const TextSpan(
+                                text: " Read more",
+                                style: TextStyle(
+                                  color: primaryGreen,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+
+                        // 4. Chef Section
                         if (widget.product.chefName != null) ...[
                           const Text(
                             "Chef",
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                color: Colors.black, // Changed to black for better visibility in the list
+                                fontSize: 18,
+                                fontFamily: 'comfortaa',
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -209,11 +256,18 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                                     Text(
                                       widget.product.chefName!,
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold, fontSize: 16),
+                                          fontWeight: FontWeight.bold, 
+                                          fontSize: 16,
+                                          fontFamily: 'comfortaa',
+                                      ),
                                     ),
                                     Text(
                                       widget.product.chefSpecialty ?? "Master Chef",
-                                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                                      style: const TextStyle(
+                                          color: Colors.grey, 
+                                          fontSize: 14,
+                                          fontFamily: 'comfortaa',
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -223,51 +277,17 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                               _buildActionCircle(Icons.phone_outlined),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 30),
                         ],
-                        // Description
-                        const Text(
-                          "Description",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                      color: Colors.grey, height: 1.5, fontSize: 14),
-                                  children: [
-                                    TextSpan(text: widget.product.description),
-                                    const TextSpan(
-                                      text: " Read more",
-                                      style: TextStyle(
-                                        color: primaryGreen,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            GestureDetector(
-                              onTap: () => setState(() => isFavorite = !isFavorite),
-                              child: Icon(
-                                isFavorite ? Icons.favorite : Icons.favorite_border,
-                                color: isFavorite ? Colors.red : Colors.grey,
-                                size: 28,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
-                        // Quantity Section
+
+                        // 5. Quantity Section
                         const Text(
                           "Quantity",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, 
+                              fontSize: 18,
+                              fontFamily: 'comfortaa',
+                          ),
                         ),
                         const SizedBox(height: 15),
                         Row(
@@ -293,6 +313,31 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                           ],
                         ),
                         const SizedBox(height: 30),
+
+                        // 6. Total Amount Display
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Total Amount",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 18,
+                                fontFamily: 'comfortaa',
+                              ),
+                            ),
+                            Text(
+                              "RWF ${_formatPrice(widget.product.price * quantity)}",
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: primaryGreen, // Use brand green for the price
+                                fontFamily: 'comfortaa',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -315,66 +360,37 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
             ),
             child: SafeArea(
               top: false,
-              child: Row(
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Total Price",
-                        style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    cartManager.addToCart(widget.product, quantity, const []);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("${widget.product.name} added to cart!"),
+                        backgroundColor: Colors.black,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "RWF ${_formatPrice(widget.product.price * quantity)}",
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                    );
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 0,
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        cartManager.addToCart(widget.product, quantity, const []);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("${widget.product.name} added to cart!"),
-                            backgroundColor: primaryGreen,
-                          ),
-                        );
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryGreen,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-                          const SizedBox(width: 10),
-                          const Text(
-                            "Add to Cart",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                  child: const Text(
+                    "Add to Cart",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'comfortaa',
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -384,7 +400,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   }
 
   Widget _buildCounterBtn(IconData icon, VoidCallback onTap) {
-    const primaryGreen = Color(0xFF32B768);
+    const primaryGreen = Color(0xFF357D5D);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -428,7 +444,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
         shape: BoxShape.circle,
         border: Border.all(color: const Color(0xFFFFEBD5)),
       ),
-      child: Icon(icon, color: const Color(0xFF32B768), size: 20),
+      child: Icon(icon, color: const Color(0xFF357D5D), size: 20),
     );
   }
 }

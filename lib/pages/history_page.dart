@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mymeal/data/order_manager.dart';
+import 'package:mymeal/services/api_client.dart';
 import 'package:intl/intl.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -10,18 +10,60 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  Future<void> _onRefresh() async {
-    // In a real app, you would fetch from API here
-    await Future.delayed(const Duration(seconds: 1));
+  List<dynamic> _orders = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrders();
+  }
+
+  Future<void> _fetchOrders() async {
+    setState(() => _isLoading = true);
+    final result = await ApiClient.getMyOrders();
     if (mounted) {
-      setState(() {});
+      setState(() {
+        if (result['success'] == true) {
+          _orders = result['data'] ?? [];
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _fetchOrders();
+  }
+
+  String _formatPrice(dynamic price) {
+    if (price == null) return "0";
+    double val = 0;
+    if (price is String) {
+      val = double.tryParse(price) ?? 0;
+    } else if (price is num) {
+      val = price.toDouble();
+    }
+    return val.toStringAsFixed(0);
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return Colors.orange;
+      case 'CONFIRMED':
+        return Colors.blue;
+      case 'COMPLETED':
+        return const Color(0xFF357D5D);
+      case 'CANCELLED':
+        return Colors.red;
+      default:
+        return const Color(0xFF357D5D);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final orders = orderManager.orders;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -41,136 +83,144 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        color: const Color(0xFF32B768),
-        child: orders.isEmpty
-            ? SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  alignment: Alignment.center,
-                  child: const Text(
-                    "No history yet",
-                    style: TextStyle(fontFamily: 'comfortaa', fontSize: 16),
-                  ),
-                ),
-              )
-            : ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                itemCount: orders.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 15),
-                itemBuilder: (context, index) {
-                  // Show newest first
-                  final order = orders[orders.length - 1 - index];
-                  return Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF357D5D)))
+          : RefreshIndicator(
+              onRefresh: _onRefresh,
+              color: const Color(0xFF357D5D),
+              child: _orders.isEmpty
+                  ? SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        alignment: Alignment.center,
+                        child: const Text(
+                          "No history yet",
+                          style: TextStyle(fontFamily: 'comfortaa', fontSize: 16),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              DateFormat('MMMM d, y').format(order.date),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                fontFamily: 'comfortaa',
+                      ),
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _orders.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 15),
+                      itemBuilder: (context, index) {
+                        final order = _orders[index];
+                        final List<dynamic> items = order['items'] ?? [];
+                        final DateTime date = order['created_at'] != null 
+                            ? DateTime.parse(order['created_at']) 
+                            : DateTime.now();
+                        final String status = order['status'] ?? "PENDING";
+                        final Color statusColor = _getStatusColor(status);
+
+                        return Container(
+                          padding: const EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF32B768).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                "Order Completed",
-                                style: TextStyle(
-                                  color: Color(0xFF32B768),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'comfortaa',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Divider(color: Colors.grey[200]),
-                        const SizedBox(height: 10),
-                        ...order.items.map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Row(
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    "${item.quantity}x",
+                                    DateFormat('MMMM d, y').format(date),
                                     style: const TextStyle(
-                                      color: Color(0xFF32B768),
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                       fontFamily: 'comfortaa',
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                     child: Text(
-                                      item.product.name,
-                                      style: const TextStyle(
+                                      status,
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
                                         fontFamily: 'comfortaa',
                                       ),
                                     ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Divider(color: Colors.grey[200]),
+                              const SizedBox(height: 10),
+                              ...items.map((item) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          "${item['quantity']}x",
+                                          style: const TextStyle(
+                                            color: Color(0xFF357D5D),
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'comfortaa',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            item['product_name'] ?? 'Unknown Item',
+                                            style: const TextStyle(
+                                              fontFamily: 'comfortaa',
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          "RWF ${_formatPrice(item['total_price'])}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'comfortaa',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Total",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      fontFamily: 'comfortaa',
+                                    ),
+                                  ),
                                   Text(
-                                    "RWF ${(item.product.price * item.quantity).toStringAsFixed(0)}",
+                                    "RWF ${_formatPrice(order['total_amount'])}",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: Color(0xFF357D5D),
                                       fontFamily: 'comfortaa',
                                     ),
                                   ),
                                 ],
                               ),
-                            )),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Total",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                fontFamily: 'comfortaa',
-                              ),
-                            ),
-                            Text(
-                              "RWF ${order.totalPrice.toStringAsFixed(0)}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Color(0xFF32B768),
-                                fontFamily: 'comfortaa',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-      ),
+            ),
     );
   }
 }

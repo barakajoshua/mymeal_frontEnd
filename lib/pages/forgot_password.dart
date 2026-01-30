@@ -57,7 +57,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: selectedOption == 0
-                        ? const Color(0xFF32B768)
+                        ? const Color(0xFF357D5D)
                         : Colors.grey.shade300,
                     width: 2,
                   ),
@@ -67,12 +67,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF32B768).withOpacity(0.1),
+                        color: const Color(0xFF357D5D).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.email_outlined,
-                        color: Color(0xFF32B768),
+                        color: Color(0xFF357D5D),
                       ),
                     ),
                     const SizedBox(width: 20),
@@ -118,7 +118,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: selectedOption == 1
-                        ? const Color(0xFF32B768)
+                        ? const Color(0xFF357D5D)
                         : Colors.grey.shade300,
                     width: 2,
                   ),
@@ -128,12 +128,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF32B768).withOpacity(0.1),
+                        color: const Color(0xFF357D5D).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.phone_outlined,
-                        color: Color(0xFF32B768),
+                        color: Color(0xFF357D5D),
                       ),
                     ),
                     const SizedBox(width: 20),
@@ -172,7 +172,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 60),
-                backgroundColor: const Color(0xFF32B768),
+                backgroundColor: const Color(0xFF357D5D),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

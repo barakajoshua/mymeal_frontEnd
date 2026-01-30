@@ -26,12 +26,12 @@ class OrderSuccessDialog extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF32B768).withOpacity(0.1),
+                color: const Color(0xFF357D5D).withOpacity(0.1),
               ),
               child: const Icon(
                 Icons.check, // Or check_circle_outline
                 size: 40,
-                color: Color(0xFF32B768),
+                color: Color(0xFF357D5D),
               ),
             ),
             const SizedBox(height: 20),
@@ -66,7 +66,7 @@ class OrderSuccessDialog extends StatelessWidget {
                   Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF32B768),
+                  backgroundColor: const Color(0xFF357D5D),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),

@@ -4,6 +4,9 @@ import 'package:mymeal/pages/forgot_password.dart';
 import 'package:mymeal/pages/signup.dart';
 import 'package:mymeal/pages/congratulation.dart';
 import 'package:mymeal/pages/main_screen.dart';
+import 'package:mymeal/pages/manager/manager_dashboard.dart';
+import 'package:mymeal/pages/developer/developer_dashboard.dart';
+import 'package:mymeal/models/user_role.dart';
 import 'package:mymeal/services/api_client.dart';
 
 class Login extends StatefulWidget {
@@ -44,9 +47,28 @@ class _LoginState extends State<Login> {
 
     if (result['success']) {
       if (mounted) {
+        final userData = result['data']['user'];
+        // API response uses 'role_id' in user object, ensure we parse it correctly
+        final int roleId = userData['roleId'] ?? userData['role_id'] ?? 1;
+
+        Widget nextScreen;
+        if (roleId == UserRole.manager) { // 3
+          nextScreen = const ManagerDashboard();
+        } else if (roleId == UserRole.developer) { // 2
+          nextScreen = const DeveloperDashboard();
+        } else if (roleId == UserRole.customer) { // 1
+          nextScreen = const MainScreen();
+        } else {
+          // Chefs (4) or unknown roles don't have a mobile dashboard
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Access restricted: This role does not have a mobile dashboard.")),
+          );
+          return;
+        }
+
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
+          MaterialPageRoute(builder: (context) => nextScreen),
           (route) => false,
         );
       }
@@ -85,7 +107,7 @@ class _LoginState extends State<Login> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w300,
-                      color: Color(0xFF32B768),
+                      color: Color(0xFF357D5D),
                       fontFamily: 'comfortaa',
                     ),
                   ),
@@ -169,7 +191,7 @@ class _LoginState extends State<Login> {
                     child: Text(
                       "Forgot Password?",
                       style: TextStyle(
-                        color: Color(0xFF32B768),
+                        color: Color(0xFF357D5D),
                         fontWeight: FontWeight.w600,
                         fontFamily: 'comfortaa',
                       ),
@@ -182,7 +204,7 @@ class _LoginState extends State<Login> {
                     onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 60),
-                      backgroundColor: Color(0xFF32B768),
+                      backgroundColor: Color(0xFF357D5D),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -222,7 +244,7 @@ class _LoginState extends State<Login> {
                   style: TextStyle(
                     fontSize: 16,
                     fontFamily: 'comfortaa',
-                    color: Color(0xFF32B768),
+                    color: Color(0xFF357D5D),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -238,7 +260,7 @@ class _LoginState extends State<Login> {
                     "Or with",
                     style: TextStyle(
                       fontFamily: 'comfortaa',
-                      color: const Color(0xFF32B768),
+                      color: const Color(0xFF357D5D),
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
@@ -254,7 +276,7 @@ class _LoginState extends State<Login> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    side: BorderSide(color: Color(0xFF32B768)),
+                    side: BorderSide(color: Color(0xFF357D5D)),
                     minimumSize: Size(double.infinity, 60),
                     backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(

@@ -80,13 +80,13 @@ class _AccountInformationPageState extends State<AccountInformationPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF32B768), // Header background color
+              primary: Color(0xFF357D5D), // Header background color
               onPrimary: Colors.white, // Header text color
               onSurface: Colors.black, // Body text color
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF32B768), // Button text color
+                foregroundColor: const Color(0xFF357D5D), // Button text color
               ),
             ),
           ),
@@ -126,7 +126,7 @@ class _AccountInformationPageState extends State<AccountInformationPage> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadUserData,
-              color: const Color(0xFF32B768),
+              color: const Color(0xFF357D5D),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -155,7 +155,7 @@ class _AccountInformationPageState extends State<AccountInformationPage> {
                      child: Container(
                        padding: const EdgeInsets.all(8),
                        decoration: const BoxDecoration(
-                         color: Color(0xFF32B768), // Green from design
+                         color: Color(0xFF357D5D), // Green from design
                          shape: BoxShape.circle,
                        ),
                        child: const Icon(
@@ -254,12 +254,12 @@ class _AccountInformationPageState extends State<AccountInformationPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(color: Color(0xFF32B768)),
+                  borderSide: const BorderSide(color: Color(0xFF357D5D)),
                 ),
                 suffixIcon: isDatePicker 
                     ? const Icon(Icons.calendar_today_outlined, color: Colors.grey)
                     : isSensitive 
-                        ? const Icon(Icons.edit, color: Color(0xFF32B768)) // Green highlight
+                        ? const Icon(Icons.edit, color: Color(0xFF357D5D)) // Green highlight
                         : Icon(suffixIcon ?? Icons.edit, color: Colors.grey),
               ),
               style: const TextStyle(

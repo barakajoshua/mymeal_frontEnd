@@ -38,6 +38,7 @@ class ApiClient {
     required String phoneNumber,
     required String email,
     required String password,
+    int roleId = 1, // Default to Customer
   }) async {
     final String? deviceToken = await getDeviceToken();
     
@@ -46,7 +47,7 @@ class ApiClient {
       "phoneNumber": phoneNumber,
       "email": email,
       "password": password,
-      "roleId": 1,
+      "roleId": roleId,
       "deviceToken": deviceToken,
       "platform": Platform.isAndroid ? "android" : "ios",
     };
@@ -63,8 +64,6 @@ class ApiClient {
       ).timeout(const Duration(seconds: 10));
 
       print("DEBUG: Status Code: ${response.statusCode}");
-      print("DEBUG: Response Body: ${response.body}");
-
       return _handleResponse(response);
     } catch (e) {
       print("DEBUG: Registration failed with error: $e");
@@ -158,6 +157,42 @@ class ApiClient {
     }
   }
 
+  static Future<Map<String, dynamic>> createOrder({
+    required List<Map<String, dynamic>> items,
+    required Map<String, dynamic> deliveryLocation,
+    String? notes,
+  }) async {
+    final String url = '$baseUrl/orders';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    final Map<String, dynamic> payload = {
+      "items": items,
+      "deliveryLocation": deliveryLocation,
+      "notes": notes ?? "",
+    };
+
+    print("DEBUG: Creating order at $url");
+    print("DEBUG: Payload: ${jsonEncode(payload)}");
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 15));
+
+      print("DEBUG: Order Status Code: ${response.statusCode}");
+      return _handleResponse(response);
+    } catch (e) {
+      print("DEBUG: Order creation failed: $e");
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> getCategories() async {
     final String url = '$baseUrl/categories/active';
     final prefs = await SharedPreferences.getInstance();
@@ -179,6 +214,258 @@ class ApiClient {
       print("DEBUG: Fetching categories failed: $e");
       return {'success': false, 'message': 'Connection failed: $e'};
     }
+  }
+
+  static Future<Map<String, dynamic>> getMyOrders() async {
+    final String url = '$baseUrl/orders/my';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    print("DEBUG: Fetching my orders from $url");
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print("DEBUG: My Orders Status Code: ${response.statusCode}");
+      return _handleResponse(response);
+    } catch (e) {
+      print("DEBUG: Fetching my orders failed: $e");
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  // --- Manager/Admin API Methods ---
+
+  // Orders
+  static Future<Map<String, dynamic>> getAllOrders() async {
+    final String url = '$baseUrl/orders'; // Shared route for Admin/Manager
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateOrderStatus(int orderId, String status) async {
+    final String url = '$baseUrl/orders/$orderId/status';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'status': status}),
+      ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  // Categories
+  static Future<Map<String, dynamic>> getAllCategories() async {
+    final String url = '$baseUrl/categories'; // Manager route
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  // Menu Items
+  static Future<Map<String, dynamic>> getAllMenuItems() async {
+    final String url = '$baseUrl/menu'; // Manager route
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  // Chefs
+  static Future<Map<String, dynamic>> getAllChefs() async {
+    final String url = '$baseUrl/chefs';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> createChefProfile({
+    required int userId,
+    required String displayName,
+    required String specialty,
+    required String bio,
+    required int experienceYears,
+  }) async {
+    final String url = '$baseUrl/chefs'; // Assuming POST /chefs creates the profile
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    final Map<String, dynamic> payload = {
+      "userId": userId,
+      "displayName": displayName,
+      "specialty": specialty,
+      "bio": bio,
+      "experienceYears": experienceYears,
+      "isActive": true,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  // Create Product (Single Endpoint for Data + Images)
+  static Future<Map<String, dynamic>> createProduct({
+    required int categoryId,
+    required int chefId,
+    required String name,
+    required String description,
+    required double price,
+    required String availableDate,
+    required bool isAvailable,
+    List<File>? images, // Up to 5 images
+  }) async {
+    final String url = '$baseUrl/menu';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    print("DEBUG: Creating product (Multipart) at $url");
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      
+      // Add headers
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add fields
+      request.fields['category_id'] = categoryId.toString();
+      request.fields['chef_id'] = chefId.toString();
+      request.fields['name'] = name;
+      request.fields['description'] = description;
+      request.fields['price'] = price.toString();
+      request.fields['available_date'] = availableDate;
+      request.fields['is_available'] = isAvailable.toString();
+
+      // Handle Images mapping to image_url, image_url_2, etc.
+      // Define the keys
+      final imageKeys = ['image_url', 'image_url_2', 'image_url_3', 'image_url_4', 'image_url_5'];
+      
+      // Add files for available images
+      if (images != null) {
+        for (int i = 0; i < imageKeys.length; i++) {
+          if (i < images.length) {
+            // Add file
+            final file = images[i];
+            final multipartFile = await http.MultipartFile.fromPath(
+              imageKeys[i], // Field name: image_url, image_url_2...
+              file.path,
+            );
+            request.files.add(multipartFile);
+          } else {
+            // Send empty string for missing images? 
+            // Some backends might expect the key to exist as a text field if empty.
+            request.fields[imageKeys[i]] = "";
+          }
+        }
+      } else {
+        // No images, send all as empty strings
+        for (var key in imageKeys) {
+          request.fields[key] = "";
+        }
+      }
+
+      print("DEBUG: Sending Multipart Request with fields: ${request.fields}");
+      print("DEBUG: Sending ${request.files.length} files. Field names: ${request.files.map((f) => f.field).toList()}");
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      return _handleResponse(response);
+    } catch (e) {
+      print('DEBUG: Create product error: $e');
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  // Managers (Admin Only)
+  static Future<Map<String, dynamic>> registerManager({
+    required String fullName,
+    required String phoneNumber,
+    required String email,
+    required String password,
+  }) async {
+    // Role 3 = Manager
+    return register(
+      fullName: fullName, 
+      phoneNumber: phoneNumber, 
+      email: email, 
+      password: password, 
+      roleId: 3
+    );
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {

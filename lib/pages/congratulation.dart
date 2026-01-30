@@ -56,7 +56,7 @@ class Congratulation extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 60),
-                  backgroundColor: const Color(0xFF32B768),
+                  backgroundColor: const Color(0xFF357D5D),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
