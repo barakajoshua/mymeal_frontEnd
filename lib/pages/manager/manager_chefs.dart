@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mymeal/services/api_client.dart';
+import 'package:mymeal/pages/manager/create_chef_form.dart';
 
 class ManagerChefs extends StatefulWidget {
   const ManagerChefs({super.key});
@@ -33,6 +34,68 @@ class _ManagerChefsState extends State<ManagerChefs> {
           SnackBar(content: Text(result['message'] ?? "Failed to load chefs")),
         );
       }
+    }
+  }
+
+  Future<void> _updateChefStatus(Map<String, dynamic> chef, bool newStatus) async {
+    final result = await ApiClient.updateChef(
+      chefId: chef['id'],
+      userId: chef['user_id'],
+      displayName: chef['display_name'] ?? '',
+      specialty: chef['specialty'] ?? '',
+      bio: chef['bio'] ?? '',
+      experienceYears: chef['experience_years'] ?? 0,
+      isActive: newStatus,
+    );
+
+    if (result['success']) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Chef status updated to ${newStatus ? "active" : "inactive"}')),
+        );
+        _loadChefs(); // Refresh list
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Failed to update chef status')),
+        );
+        _loadChefs(); // Refresh to revert UI change
+      }
+    }
+  }
+
+  Future<void> _showConfirmStatusDialog(Map<String, dynamic> chef, bool newStatus) async {
+    final chefName = chef['display_name'] ?? 'this chef';
+    final statusText = newStatus ? 'activate' : 'deactivate';
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Status Change', style: TextStyle(fontFamily: 'comfortaa', fontWeight: FontWeight.bold)),
+        content: Text(
+          'Are you sure you want to $statusText $chefName?',
+          style: const TextStyle(fontFamily: 'comfortaa'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF357D5D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _updateChefStatus(chef, newStatus);
     }
   }
 
@@ -81,7 +144,7 @@ class _ManagerChefsState extends State<ManagerChefs> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              chef['displayName'] ?? user['full_name'] ?? 'Unknown Chef',
+                              chef['display_name'] ?? user['full_name'] ?? 'Unknown Chef',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -100,9 +163,11 @@ class _ManagerChefsState extends State<ManagerChefs> {
                         ),
                       ),
                       Switch(
-                        value: chef['isActive'] == 1 || chef['isActive'] == true,
+                        value: chef['is_active'] == 1 || chef['is_active'] == true,
                         activeColor: const Color(0xFF357D5D),
-                        onChanged: (val) {},
+                        onChanged: (val) {
+                          _showConfirmStatusDialog(chef, val);
+                        },
                       ),
                     ],
                   ),
@@ -110,8 +175,16 @@ class _ManagerChefsState extends State<ManagerChefs> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement Add Chef Flow (Register user + Create Chef Profile)
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateChefForm()),
+          );
+          
+          // Refresh list if chef was created
+          if (result == true) {
+            _loadChefs();
+          }
         },
         backgroundColor: const Color(0xFF357D5D),
         child: const Icon(Icons.add, color: Colors.white),

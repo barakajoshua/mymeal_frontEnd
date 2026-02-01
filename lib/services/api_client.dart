@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:mymeal/services/fcm_service.dart';
+import 'package:mymeal/firebase_options.dart';
 
 class ApiClient {
   static const String _baseUrlLocal = 'https://penetratingly-nonstructural-alton.ngrok-free.dev/api';
@@ -17,18 +20,34 @@ class ApiClient {
 
   static Future<String?> getDeviceToken() async {
     try {
-      FirebaseMessaging messaging = FirebaseMessaging.instance;
-      String? token = await messaging.getToken();
+      // Use the singleton FCMService to get the token
+      // This ensures we use the initialized instance
+      String? token = await FCMService().getToken();
       
-      if (token != null) {
+      if (token != null && !token.startsWith("ERROR") && !token.startsWith("FAILED")) {
         print("REAL FCM TOKEN FOUND: $token");
         return token;
       } else {
-        print("FCM Token retrieval returned null. Ensure Firebase is configured.");
+        print("FCM Token retrieval returned null or error: $token. Retrying once...");
+        // Fallback retry
+        token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          print("REAL FCM TOKEN FOUND ON RETRY: $token");
+          return token;
+        }
         return "FAILED_TO_GET_FCM_TOKEN_${DateTime.now().millisecondsSinceEpoch}";
       }
     } catch (e) {
       print("Error getting device token: $e");
+      // If we get the 'no-app' error, it means Firebase wasn't initialized yet
+      if (e.toString().contains('no-app')) {
+        try {
+          // One last attempt to initialize if not done
+          await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+          String? token = await FirebaseMessaging.instance.getToken();
+          if (token != null) return token;
+        } catch (_) {}
+      }
       return "ERROR_GETTING_FCM_TOKEN_${e.toString().replaceAll(' ', '_')}";
     }
   }
@@ -39,8 +58,12 @@ class ApiClient {
     required String email,
     required String password,
     int roleId = 1, // Default to Customer
+    bool includeDeviceToken = true, // Set to false when registering chefs from manager
   }) async {
-    final String? deviceToken = await getDeviceToken();
+    String? deviceToken;
+    if (includeDeviceToken) {
+      deviceToken = await getDeviceToken();
+    }
     
     final Map<String, dynamic> payload = {
       "fullName": fullName,
@@ -48,8 +71,8 @@ class ApiClient {
       "email": email,
       "password": password,
       "roleId": roleId,
-      "deviceToken": deviceToken,
-      "platform": Platform.isAndroid ? "android" : "ios",
+      if (includeDeviceToken && deviceToken != null) "deviceToken": deviceToken,
+      if (includeDeviceToken) "platform": Platform.isAndroid ? "android" : "ios",
     };
 
     final String url = '$baseUrl/auth/register';
@@ -133,6 +156,37 @@ class ApiClient {
     }
     return null;
   }
+
+  static Future<Map<String, dynamic>> updateDeviceToken(String deviceToken) async {
+    final String url = '$baseUrl/auth/update-token';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    final Map<String, dynamic> payload = {
+      "deviceToken": deviceToken,
+      "platform": Platform.isAndroid ? "android" : "ios",
+    };
+
+    print("DEBUG: Updating device token at $url");
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 10));
+
+      print("DEBUG: Update token Status Code: ${response.statusCode}");
+      return _handleResponse(response);
+    } catch (e) {
+      print("DEBUG: Update token failed: $e");
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
 
   static Future<Map<String, dynamic>> getMenus() async {
     final String url = '$baseUrl/menu';
@@ -301,6 +355,42 @@ class ApiClient {
     }
   }
 
+  static Future<Map<String, dynamic>> createCategory({
+    required String name,
+    required String description,
+    required int sortOrder,
+    bool isActive = true,
+  }) async {
+    final String url = '$baseUrl/categories';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    final Map<String, dynamic> payload = {
+      "name": name,
+      "description": description,
+      "sort_order": sortOrder,
+      "is_active": isActive,
+    };
+
+    print("DEBUG: Creating category at $url");
+    print("DEBUG: Payload: ${jsonEncode(payload)}");
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
   // Menu Items
   static Future<Map<String, dynamic>> getAllMenuItems() async {
     final String url = '$baseUrl/menu'; // Manager route
@@ -370,6 +460,47 @@ class ApiClient {
         },
         body: jsonEncode(payload),
       ).timeout(const Duration(seconds: 10));
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateChef({
+    required int chefId,
+    required int userId,
+    required String displayName,
+    required String specialty,
+    required String bio,
+    required int experienceYears,
+    required bool isActive,
+  }) async {
+    final String url = '$baseUrl/chefs/$chefId';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    final Map<String, dynamic> payload = {
+      "userId": userId,
+      "displayName": displayName,
+      "specialty": specialty,
+      "bio": bio,
+      "experienceYears": experienceYears,
+      "isActive": isActive,
+    };
+
+    print("DEBUG: Updating chef at $url");
+    print("DEBUG: Payload: ${jsonEncode(payload)}");
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 10));
+
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': 'Connection failed: $e'};
@@ -447,6 +578,41 @@ class ApiClient {
       return _handleResponse(response);
     } catch (e) {
       print('DEBUG: Create product error: $e');
+      return {'success': false, 'message': 'Connection failed: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateProduct({
+    required int productId,
+    required String name,
+    required double price,
+    required bool isAvailable,
+  }) async {
+    final String url = '$baseUrl/menu/$productId';
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    final Map<String, dynamic> payload = {
+      "name": name,
+      "price": price,
+      "is_available": isAvailable,
+    };
+
+    print("DEBUG: Updating product at $url");
+    print("DEBUG: Payload: ${jsonEncode(payload)}");
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 10));
+
+      return _handleResponse(response);
+    } catch (e) {
       return {'success': false, 'message': 'Connection failed: $e'};
     }
   }
