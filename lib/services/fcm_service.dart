@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mymeal/services/api_client.dart';
+import 'package:mymeal/services/local_notification_service.dart';
 
 /// FCM Service to handle push notifications
 class FCMService {
@@ -75,7 +76,13 @@ class FCMService {
     print('FCM: Data: ${message.data}');
 
     // You can show a local notification here or update UI
-    // For now, we'll just log it
+    if (message.notification != null) {
+      LocalNotificationService.show(
+        title: message.notification!.title ?? 'No title',
+        body: message.notification!.body ?? 'No body',
+        payload: message.data.toString(), // Optional: pass data as payload
+      );
+    }
   }
 
   /// Handle notification tap (when user taps notification)

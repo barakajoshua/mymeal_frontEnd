@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:mymeal/providers/auth_provider.dart';
 import 'package:mymeal/pages/profile.dart';
 import 'package:mymeal/pages/forgot_password.dart';
 import 'package:mymeal/pages/signup.dart';
@@ -38,44 +40,52 @@ class _LoginState extends State<Login> {
 
     setState(() => _isLoading = true);
 
-    final result = await ApiClient.login(
-      phoneNumber: phoneController.text,
-      password: passwordController.text,
-    );
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final result = await authProvider.login(
+        phoneController.text,
+        passwordController.text,
+      );
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (result['success']) {
-      if (mounted) {
-        final userData = result['data']['user'];
-        // API response uses 'role_id' in user object, ensure we parse it correctly
-        final int roleId = userData['roleId'] ?? userData['role_id'] ?? 1;
+      if (result['success']) {
+        if (mounted) {
+          final userData = result['data']['user'];
+          final int roleId = userData['roleId'] ?? userData['role_id'] ?? 1;
 
-        Widget nextScreen;
-        if (roleId == UserRole.manager) { // 3
-          nextScreen = const ManagerDashboard();
-        } else if (roleId == UserRole.developer) { // 2
-          nextScreen = const DeveloperDashboard();
-        } else if (roleId == UserRole.customer) { // 1
-          nextScreen = const MainScreen();
-        } else {
-          // Chefs (4) or unknown roles don't have a mobile dashboard
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Access restricted: This role does not have a mobile dashboard.")),
+          Widget nextScreen;
+          if (roleId == UserRole.manager) { // 3
+            nextScreen = const ManagerDashboard();
+          } else if (roleId == UserRole.developer) { // 2
+            nextScreen = const DeveloperDashboard();
+          } else if (roleId == UserRole.customer) { // 1
+            nextScreen = const MainScreen();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Access restricted: This role does not have a mobile dashboard.")),
+            );
+            return;
+          }
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => nextScreen),
+            (route) => false,
           );
-          return;
         }
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => nextScreen),
-          (route) => false,
-        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? "Login failed")),
+          );
+        }
       }
-    } else {
+    } catch (e) {
+      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? "Login failed")),
+          SnackBar(content: Text("An error occurred: $e")),
         );
       }
     }
