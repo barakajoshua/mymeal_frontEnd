@@ -10,8 +10,8 @@ import 'package:mymeal/services/fcm_service.dart';
 import 'package:mymeal/firebase_options.dart';
 
 class ApiClient {
-  static const String _baseUrlLocal = 'https://penetratingly-nonstructural-alton.ngrok-free.dev/api';
-  static const String _baseUrlEmulator = 'https://penetratingly-nonstructural-alton.ngrok-free.dev/api';
+  static const String _baseUrlLocal = 'https://mymealbackend.onrender.com/api';
+  static const String _baseUrlEmulator = 'https://mymealbackend.onrender.com/api';
 
   static String get baseUrl {
     if (Platform.isAndroid) {
@@ -401,12 +401,20 @@ class ApiClient {
   }
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
+    final token = prefs.getString('auth_token'); // Note: AuthProvider uses _accessToken variable, this uses prefs. 
+    // If key names differ, we might have issues. AuthProvider doesn't seem to save 'auth_token' to prefs in the code I saw?
+    // AuthProvider keeps token in memory. 
+    // But let's assume this might be legacy or backup. 
     
+    final refreshToken = await SecureStorageService.instance.getRefreshToken();
+
     try {
         if (token != null) {
             await DioService().client.post(
                 '/auth/logout',
+                data: {
+                  'refreshToken': refreshToken
+                },
                 options: Options(
                     headers: {'Authorization': 'Bearer $token'}
                 )

@@ -27,47 +27,108 @@ class AuthProvider extends ChangeNotifier {
     // Check refresh token in secure storage
     final refreshToken = await _storageService.getRefreshToken();
     
+    // Check for cached user data
+    final prefs = await SharedPreferences.getInstance();
+    final userStr = prefs.getString('user_data');
+    User? cachedUser;
+    
+    if (userStr != null) {
+      try {
+        cachedUser = User.fromJson(jsonDecode(userStr));
+      } catch (e) {
+        print("Error parsing cached user data: $e");
+      }
+    }
+
     if (refreshToken != null) {
-      // Try to refresh
-       print("DEBUG: Refresh token found, attempting to refresh session...");
+      print("DEBUG: Refresh token found, attempting to refresh session...");
+      
+      // Try to refresh token
       final result = await _authService.refreshToken(refreshToken);
+      
       if (result['success']) {
         _accessToken = result['data']['accessToken'];
-        // Backend could return user here, or we load from sharedPrefs if not returned
-        // For robustness, let's load user from prefs if available because refresh endpoint often just returns tokens
-        final prefs = await SharedPreferences.getInstance();
-        final userStr = prefs.getString('user_data');
-        if (userStr != null) {
-          try {
-            _user = User.fromJson(jsonDecode(userStr));
+        
+        // Success! We have a valid session.
+        // Update refresh token if a new one was sent (optional/future proofing)
+        if (result['data']['refreshToken'] != null) {
+            await _storageService.saveRefreshToken(result['data']['refreshToken']);
+        }
+
+        // Now ensure we have User data
+        if (cachedUser != null) {
+          // We have cached user, use it immediately for speed
+          _user = cachedUser;
+          _status = AuthStatus.authenticated;
+          
+          // Background: Try to update profile with fresh data (silent update)
+          _fetchAndSaveProfile(); 
+        } else {
+          // No cached user? We NEED to fetch it from backend.
+           print("DEBUG: No cached user found. Fetching profile from backend...");
+           bool profileSuccess = await _fetchAndSaveProfile();
+           
+           if (profileSuccess) {
              _status = AuthStatus.authenticated;
-          } catch(e) {
-            print("Error parsing user data: $e");
-            _status = AuthStatus.unauthenticated;
+           } else {
+             // If we can't get profile even with valid token, something is wrong (or network failed after token refresh?)
+             // If it was network error during profile fetch, we are in a tough spot: Valid token, but no user info.
+             // We'll set unauthenticated to force re-login as fallback, or handle specifically.
+             // For now:
+             _status = AuthStatus.unauthenticated; 
+           }
+        }
+        
+      } else {
+        // Refresh Failed. Why?
+        final bool isNetworkError = result['isNetworkError'] == true;
+        final int? statusCode = result['statusCode'];
+
+        print("DEBUG: Refresh failed. NetworkError: $isNetworkError, Status: $statusCode");
+
+        if (isNetworkError) {
+          // INTERNET DOWN.
+          // If we have cached user, allow "Offline Mode".
+          if (cachedUser != null) {
+             print("DEBUG: Network error but cached user found. Entering Offline Mode.");
+             _user = cachedUser;
+             _status = AuthStatus.authenticated;
+             // Note: _accessToken is null here, so API calls will likely fail or get queued until net is back.
+             // But valid use case for viewing cached content.
+          } else {
+             // No internet and no cache. Cannot log in.
+             _status = AuthStatus.unauthenticated;
           }
         } else {
-           // If we have token, but no user data, we should fetch Profile (if api exists) or login again.
-           // For now, assume login again is safer 
-           _status = AuthStatus.unauthenticated;
+          // SERVER REJECTED (401/403/400). Token is invalid/expired.
+          print("DEBUG: Refresh token invalid. Logging out.");
+          await _storageService.deleteRefreshToken();
+          _status = AuthStatus.unauthenticated;
         }
-
-        if (_status == AuthStatus.authenticated) {
-            // Update refreshed tokens if present
-            // Note: backend response might have new refresh token too
-            if (result['data']['refreshToken'] != null) {
-                await _storageService.saveRefreshToken(result['data']['refreshToken']);
-            }
-        }
-
-      } else {
-        print("DEBUG: Refresh token expired or invalid.");
-        await _storageService.deleteRefreshToken();
-        _status = AuthStatus.unauthenticated;
       }
     } else {
+      // No refresh token found.
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
+  }
+
+  // Helper to fetch and save profile
+  Future<bool> _fetchAndSaveProfile() async {
+    if (_accessToken == null) return false;
+    
+    final result = await _authService.getUserProfile(_accessToken!);
+    if (result['success']) {
+      final userData = result['data'];
+      _user = User.fromJson(userData);
+      
+      // Update cache
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_data', jsonEncode(userData));
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
   Future<Map<String, dynamic>> login(String phoneNumber, String password) async {
@@ -98,7 +159,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _authService.logout(_accessToken);
+    // Get refresh token before deleting it
+    final refreshToken = await _storageService.getRefreshToken();
+    
+    // Call backend to invalidate session
+    await _authService.logout(_accessToken, refreshToken);
+    
     await _storageService.deleteRefreshToken();
     
     final prefs = await SharedPreferences.getInstance();
